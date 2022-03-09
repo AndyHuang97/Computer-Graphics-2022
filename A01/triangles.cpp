@@ -69,7 +69,7 @@ const float bottom_terrain_y = 1;
 rectangle(left_terrain_x, right_terrain_x, top_terrain_y, bottom_terrain_y, 0, 102.0/255, 0);
 
 
-// auto circle = [=] ()
+// circle
 for(int i = 0; i < 32; i++) {
 	Triangle( 0.68 + 0.05 * cos(6.28/32*(i-0.5)), -0.65 + 0.05 * sin(6.28/32*(i-0.5)),
 			  0.68 + 0.10 * cos(6.28/32*i), -0.65 + 0.10 * sin(6.28/32*i),
