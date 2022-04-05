@@ -130,7 +130,7 @@ M1_indices[35] = 7;
 
 // Resizes the vertices array. Repalce the values with the correct number of
 // vertices components (3 * number of vertices)
-int nSlices = 32*2;
+int nSlices = 8;
 float radius = 1.0;
 float height = 1.0;
 int cX = 0;
@@ -154,12 +154,25 @@ auto circleVertices = [&] (float x,  float y, float z, float h, float r, int nSl
     }
 };
 
+auto printTriangle = [&] (int triangleID, int vertex1, int vertex2, int vertex3) {
+    std::cout << "Triangle: " << triangleID;
+    std::cout << "\t{ "  << vertex1;
+    std::cout << "\t" << vertex2;
+    std::cout << "\t" << vertex3;
+    std::cout << "}" << std::endl;
+};
+
 auto circleIndices = [&] (int nSlices, int centerIdx, int triangleIdxOffset) {
 	for (int i = 0; i < nSlices; i++) {
         M2_indices[(i+triangleIdxOffset)*3 + 0] = centerIdx;
         M2_indices[(i+triangleIdxOffset)*3 + 1] = (i+1) + centerIdx;
         M2_indices[(i+triangleIdxOffset)*3 + 2] = (i+1) % nSlices + 1 + centerIdx;
-        std::cout << "Triangle: " << i+triangleIdxOffset  << "\tVertex1: " << M2_indices[(i+triangleIdxOffset)*3 + 0] << "\tVertex2: " << M2_indices[(i+triangleIdxOffset)*3 + 1] << "\tVertex3: " << M2_indices[(i+triangleIdxOffset)*3 + 2] << std::endl;
+
+        printTriangle(i+triangleIdxOffset, 
+                    M2_indices[(i+triangleIdxOffset)*3 + 0], 
+                    M2_indices[(i+triangleIdxOffset)*3 + 1], 
+                    M2_indices[(i+triangleIdxOffset)*3 + 2]);
+
     }
 };
 
@@ -182,14 +195,20 @@ for (int i = 0; i < nSlices; i++) { // WARNING: this may not cover an ODD number
     M2_indices[(triangleIdxOffset+i)*3 + 0] = i + 1; //skip the center
     M2_indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) % nSlices + 1;
     M2_indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) + (nSlices + 1);
-    std::cout << "Triangle: " << i+triangleIdxOffset  << "\tVertex1: " << M2_indices[(triangleIdxOffset+i)*3 + 0] << "\tVertex2: " << M2_indices[(triangleIdxOffset+i)*3 + 1] << "\tVertex3: " << M2_indices[(triangleIdxOffset+i)*3 + 2] << std::endl;
+    printTriangle(i+triangleIdxOffset, 
+                    M2_indices[(i+triangleIdxOffset)*3 + 0], 
+                    M2_indices[(i+triangleIdxOffset)*3 + 1], 
+                    M2_indices[(i+triangleIdxOffset)*3 + 2]);
 
     triangleIdxOffset +=1;
 
     M2_indices[(triangleIdxOffset+i)*3 + 0] = (i + 1) % nSlices + 1;
     M2_indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) + (nSlices + 1);
     M2_indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) % nSlices + (nSlices + 1) + 1;
-    std::cout << "Triangle: " << i+triangleIdxOffset  << "\tVertex1: " << M2_indices[(triangleIdxOffset+i)*3 + 0] << "\tVertex2: " << M2_indices[(triangleIdxOffset+i)*3 + 1] << "\tVertex3: " << M2_indices[(triangleIdxOffset+i)*3 + 2] << std::endl;
+    printTriangle(i+triangleIdxOffset, 
+                    M2_indices[(i+triangleIdxOffset)*3 + 0], 
+                    M2_indices[(i+triangleIdxOffset)*3 + 1], 
+                    M2_indices[(i+triangleIdxOffset)*3 + 2]);
 
 }
 
