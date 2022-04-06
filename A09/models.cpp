@@ -39,12 +39,12 @@ std::vector<uint32_t> coneIndices(std::vector<uint32_t> indices, const int nSlic
     return indices;
 };
 
-std::vector<uint32_t> drawLateralFaces(std::vector<uint32_t> indices, int nSlices, int triangleIdxOffset) {
+std::vector<uint32_t> drawLateralFaces(std::vector<uint32_t> indices, int nSlices, int triangleIdxOffset, int prevCenterIdx) {
+    std::cout << "\nDrawing lateral faces ...\n";
     for (int i = 0; i < nSlices; i++) {
-
-        indices[(triangleIdxOffset+i)*3 + 0] = i + 1; //skip the center
-        indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) % nSlices + 1;
-        indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) + (nSlices + 1);
+        indices[(triangleIdxOffset+i)*3 + 0] = i + 1 + prevCenterIdx; //i+1 to skip the center
+        indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) % nSlices + 1 + prevCenterIdx;
+        indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) + (nSlices + 1) + prevCenterIdx;
         printTriangle(i+triangleIdxOffset, 
                         indices[(i+triangleIdxOffset)*3 + 0], 
                         indices[(i+triangleIdxOffset)*3 + 1], 
@@ -52,9 +52,9 @@ std::vector<uint32_t> drawLateralFaces(std::vector<uint32_t> indices, int nSlice
 
         triangleIdxOffset +=1;
 
-        indices[(triangleIdxOffset+i)*3 + 0] = (i + 1) % nSlices + 1;
-        indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) + (nSlices + 1);
-        indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) % nSlices + (nSlices + 1) + 1;
+        indices[(triangleIdxOffset+i)*3 + 0] = (i + 1) % nSlices + 1 + prevCenterIdx;
+        indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) + (nSlices + 1) + prevCenterIdx;
+        indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) % nSlices + (nSlices + 1) + 1 + prevCenterIdx;
         printTriangle(i+triangleIdxOffset, 
                         indices[(i+triangleIdxOffset)*3 + 0], 
                         indices[(i+triangleIdxOffset)*3 + 1], 
@@ -95,7 +95,8 @@ void makeCylinder(const int resolution) {
     triangleIdxOffset += nSlices;
     std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
 
-    M2_indices = drawLateralFaces(M2_indices, nSlices, triangleIdxOffset);
+    int prevCenterIdx = centerIdx-nSlices-1;
+    M2_indices = drawLateralFaces(M2_indices, nSlices, triangleIdxOffset, prevCenterIdx);
     triangleIdxOffset += nSlices*2;
     std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
 }
@@ -123,48 +124,42 @@ void makeSphere(const int horizonatlResolution, const int verticalResolution) {
     float stripeHeight = 2*sphereRadius / nStripes;
     float coneBaseY = sphereRadius - stripeHeight;
 
-    std::cout << "==================================== SPHERE ===================================="  << nStripes << std::endl;
+    std::cout << "==================================== SPHERE(" << nStripes << ") ===================================="  << std::endl;
     std::cout << "nStripes = "  << nStripes << std::endl;
     std::cout << "coneBaseY = "  << coneBaseY << std::endl;
-    std::cout << "stripeHeight = " << stripeHeight << std::endl;
-
-    int centerIdx = 0;
-    float coneHeight = stripeHeight;
-    float circleRadius = sqrt(pow(sphereRadius,2) - pow(coneBaseY,2));
-    std::cout << "circleRadius = "  << circleRadius << std::endl;
-
-    M3_vertices = coneVertices(M3_vertices, cX, cY, cZ, coneBaseY, coneHeight, circleRadius, nSlices, centerIdx);
-    M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
-    triangleIdxOffset += nSlices;   // how many triangles assigned so far
-    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
-
-    centerIdx += nSlices+1;          // consider the first center point too
-    M3_vertices = coneVertices(M3_vertices, cX, cY, cZ, -coneBaseY, -coneHeight, circleRadius, nSlices, centerIdx);
-    M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
-    triangleIdxOffset += nSlices;
-    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
-
+    std::cout << "stripeHeight = " << stripeHeight << std::endl << std::endl;
 
     // inner circles
-    float circleHeight = 0;
-    std::cout << "***************** Inner Circles *************" << std::endl;
-    for(int i=0; i < nCircles-2; i++) {
-        coneBaseY = sphereRadius - (i+2)*stripeHeight;
-        circleRadius = sqrt(pow(sphereRadius,2) - pow(coneBaseY,2));
+    float circleHeight;
+    int centerIdx = 0;
+    for(int i=0; i < nCircles; i++) {
+        if (i == 0)
+            circleHeight = stripeHeight;
+        else if ( i == nCircles-1)
+            circleHeight = -stripeHeight;
+            else
+                circleHeight = 0;
+        
+        float coneBaseY = sphereRadius - (i+1)*stripeHeight;
+        float circleRadius = sqrt(pow(sphereRadius,2) - pow(coneBaseY,2));
         std::cout << "coneBaseY = "  << coneBaseY << std::endl;
         std::cout << "circleRadius = "  << circleRadius << std::endl;
-        centerIdx += nSlices+1;
         M3_vertices = coneVertices(M3_vertices, cX, cY, cZ, coneBaseY, circleHeight, circleRadius, nSlices, centerIdx);
-        M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
-        triangleIdxOffset += nSlices;
+        if (i==0 || i == nCircles-1) { // do not add triangles to inner circles
+            M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
+            triangleIdxOffset += nSlices;
+        }
         std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+
+        if (i>0) {
+            int prevCenterIdx = centerIdx - nSlices - 1;
+            std::cout << std::endl << "prevCenterIdx: " << prevCenterIdx << std::endl;
+            M3_indices = drawLateralFaces(M3_indices, nSlices, triangleIdxOffset, prevCenterIdx);
+            triangleIdxOffset += nSlices*2;
+            std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+        }
+        centerIdx += nSlices+1;
     }
-
-
-
-    // M3_indices = drawLateralFaces(M3_indices, nSlices, triangleIdxOffset);
-    // triangleIdxOffset += nSlices*2;
-    // std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
 }
 
 // this function creates the geometries to be shown, and output thems
@@ -301,7 +296,7 @@ makeCylinder(resolution);
 
 
 //// M3 : Sphere
-resolution = 4;
+resolution = 128;
 makeSphere(resolution, resolution);
 
 
