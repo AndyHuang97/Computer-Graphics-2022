@@ -1,3 +1,172 @@
+
+void printTriangle(const int triangleID, const int vertex1, const int vertex2, const int vertex3) {
+    std::cout << "Triangle: " << triangleID;
+    std::cout << "\t{ "  << vertex1;
+    std::cout << "\t" << vertex2;
+    std::cout << "\t" << vertex3;
+    std::cout << "}" << std::endl;
+};
+
+std::vector<float> coneVertices(std::vector<float> vertices, const float x,  const float y, const float z, const float coneBaseY, const float coneHeight, const float r, const int nSlices, const int centerIdx) {
+	// Center
+    vertices[centerIdx*3 + 0]  =  x;
+    vertices[centerIdx*3 + 1]  =  y + coneBaseY + coneHeight;
+    vertices[centerIdx*3 + 2]  =  z;
+
+    // Perimeter
+    for (int i = 0; i < nSlices; i++) {
+        float alpha = (float) (i % nSlices) / nSlices * 2.0 * M_PI;
+        vertices[(i+1+centerIdx)*3 + 0] = x + r * cos(alpha);
+        vertices[(i+1+centerIdx)*3 + 1] = y + coneBaseY;
+        vertices[(i+1+centerIdx)*3 + 2] = z + r * sin(alpha);
+    }
+    return vertices;
+};
+
+
+std::vector<uint32_t> coneIndices(std::vector<uint32_t> indices, const int nSlices, const int centerIdx, const int triangleIdxOffset) {
+	for (int i = 0; i < nSlices; i++) {
+        indices[(i+triangleIdxOffset)*3 + 0] = centerIdx;
+        indices[(i+triangleIdxOffset)*3 + 1] = (i+1) + centerIdx;
+        indices[(i+triangleIdxOffset)*3 + 2] = (i+1) % nSlices + 1 + centerIdx;
+
+        printTriangle(i+triangleIdxOffset, 
+                    indices[(i+triangleIdxOffset)*3 + 0], 
+                    indices[(i+triangleIdxOffset)*3 + 1], 
+                    indices[(i+triangleIdxOffset)*3 + 2]);
+
+    }
+    return indices;
+};
+
+std::vector<uint32_t> drawLateralFaces(std::vector<uint32_t> indices, int nSlices, int triangleIdxOffset) {
+    for (int i = 0; i < nSlices; i++) {
+
+        indices[(triangleIdxOffset+i)*3 + 0] = i + 1; //skip the center
+        indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) % nSlices + 1;
+        indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) + (nSlices + 1);
+        printTriangle(i+triangleIdxOffset, 
+                        indices[(i+triangleIdxOffset)*3 + 0], 
+                        indices[(i+triangleIdxOffset)*3 + 1], 
+                        indices[(i+triangleIdxOffset)*3 + 2]);
+
+        triangleIdxOffset +=1;
+
+        indices[(triangleIdxOffset+i)*3 + 0] = (i + 1) % nSlices + 1;
+        indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) + (nSlices + 1);
+        indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) % nSlices + (nSlices + 1) + 1;
+        printTriangle(i+triangleIdxOffset, 
+                        indices[(i+triangleIdxOffset)*3 + 0], 
+                        indices[(i+triangleIdxOffset)*3 + 1], 
+                        indices[(i+triangleIdxOffset)*3 + 2]);
+
+    }
+    return indices;
+};
+
+void makeCylinder(const int resolution) {
+    // Replace the code below, that creates a simple rotated square, with the one to create a cylinder.
+
+    // Resizes the vertices array. Repalce the values with the correct number of
+    // vertices components (3 * number of vertices)
+    int nSlices = resolution;
+    float radius = 1.0;
+    float cylinderHeight = 1.0;
+    int cX = 0;
+    int cY = 0;
+    int cZ = 0;
+    M2_vertices.resize(3 * 2*(nSlices+1)); // n+1 for each cicle (x2)
+    M2_indices.resize(3 * (4*nSlices)); // n for each circle (x2), 2*n vertical rectangles
+
+
+    // Vertices definitions
+    int triangleIdxOffset = 0;
+    int centerIdx = 0;
+    int coneHeight = 0;
+
+    M2_vertices = coneVertices(M2_vertices, cX, cY, cZ, cylinderHeight, coneHeight, radius, nSlices, centerIdx);
+    M2_indices = coneIndices(M2_indices, nSlices, centerIdx, triangleIdxOffset);
+    triangleIdxOffset += nSlices;   // how many triangles assigned so far
+    centerIdx = nSlices+1;          // consider the first center point too
+    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+
+    M2_vertices = coneVertices(M2_vertices, cX, cY, cZ, -cylinderHeight, -coneHeight, radius, nSlices, centerIdx);
+    M2_indices = coneIndices(M2_indices, nSlices, centerIdx, triangleIdxOffset);
+    triangleIdxOffset += nSlices;
+    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+
+    M2_indices = drawLateralFaces(M2_indices, nSlices, triangleIdxOffset);
+    triangleIdxOffset += nSlices*2;
+    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+}
+
+void makeSphere(const int horizonatlResolution, const int verticalResolution) {
+    // Replace the code below, that creates a simple triangle, with the one to create a sphere.
+
+    // Resizes the vertices array. Repalce the values with the correct number of
+    // vertices components (3 * number of vertices)
+
+    int nSlices = horizonatlResolution;
+    int nStripes = verticalResolution; // must be even because of symmetry
+    int nCircles = nStripes-1;
+    float sphereRadius = 1.0;
+    int cX = 0;
+    int cY = 0;
+    int cZ = 0;
+    M3_vertices.resize(3 * nCircles*(nSlices+1));
+    M3_indices.resize(3  * nCircles*(2*nSlices));
+
+
+    
+    // Vertices and indices definitions
+    int triangleIdxOffset = 0;
+    float stripeHeight = 2*sphereRadius / nStripes;
+    float coneBaseY = sphereRadius - stripeHeight;
+
+    std::cout << "==================================== SPHERE ===================================="  << nStripes << std::endl;
+    std::cout << "nStripes = "  << nStripes << std::endl;
+    std::cout << "coneBaseY = "  << coneBaseY << std::endl;
+    std::cout << "stripeHeight = " << stripeHeight << std::endl;
+
+    int centerIdx = 0;
+    float coneHeight = stripeHeight;
+    float circleRadius = sqrt(pow(sphereRadius,2) - pow(coneBaseY,2));
+    std::cout << "circleRadius = "  << circleRadius << std::endl;
+
+    M3_vertices = coneVertices(M3_vertices, cX, cY, cZ, coneBaseY, coneHeight, circleRadius, nSlices, centerIdx);
+    M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
+    triangleIdxOffset += nSlices;   // how many triangles assigned so far
+    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+
+    centerIdx += nSlices+1;          // consider the first center point too
+    M3_vertices = coneVertices(M3_vertices, cX, cY, cZ, -coneBaseY, -coneHeight, circleRadius, nSlices, centerIdx);
+    M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
+    triangleIdxOffset += nSlices;
+    std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+
+
+    // inner circles
+    float circleHeight = 0;
+    std::cout << "***************** Inner Circles *************" << std::endl;
+    for(int i=0; i < nCircles-2; i++) {
+        coneBaseY = sphereRadius - (i+2)*stripeHeight;
+        circleRadius = sqrt(pow(sphereRadius,2) - pow(coneBaseY,2));
+        std::cout << "coneBaseY = "  << coneBaseY << std::endl;
+        std::cout << "circleRadius = "  << circleRadius << std::endl;
+        centerIdx += nSlices+1;
+        M3_vertices = coneVertices(M3_vertices, cX, cY, cZ, coneBaseY, circleHeight, circleRadius, nSlices, centerIdx);
+        M3_indices = coneIndices(M3_indices, nSlices, centerIdx, triangleIdxOffset);
+        triangleIdxOffset += nSlices;
+        std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+    }
+
+
+
+    // M3_indices = drawLateralFaces(M3_indices, nSlices, triangleIdxOffset);
+    // triangleIdxOffset += nSlices*2;
+    // std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
+}
+
 // this function creates the geometries to be shown, and output thems
 // in global variables M1_vertices and M1_indices to M4_vertices and M4_indices
 void makeModels() {
@@ -126,139 +295,14 @@ M1_indices[35] = 7;
 
 
 //// M2 : Cylinder
-// Replace the code below, that creates a simple rotated square, with the one to create a cylinder.
-
-// Resizes the vertices array. Repalce the values with the correct number of
-// vertices components (3 * number of vertices)
-int nSlices = 8;
-float radius = 1.0;
-float height = 1.0;
-int cX = 0;
-int cY = 0;
-int cZ = 0;
-M2_vertices.resize(3 * 2*(nSlices+1)); // n+1 for eachh cicle and 2 triangles for each slice
-M2_indices.resize(3 * (4*nSlices)); // 2*n for circles, 2*n for vertical rectangles
-
-auto circleVertices = [&] (float x,  float y, float z, float h, float r, int nSlices, int centerIdx) {
-	// Center
-    M2_vertices[centerIdx*3 + 0]  =  x;
-    M2_vertices[centerIdx*3 + 1]  =  y + h;
-    M2_vertices[centerIdx*3 + 2]  =  z;
-
-    // Perimeter
-    for (int i = 0; i < nSlices; i++) {
-        float alpha = (float) (i % nSlices) / nSlices * 2.0 * M_PI;
-        M2_vertices[(i+1+centerIdx)*3 + 0] = x + r * cos(alpha);
-        M2_vertices[(i+1+centerIdx)*3 + 1] = y + h;
-        M2_vertices[(i+1+centerIdx)*3 + 2] = z + r * sin(alpha);
-    }
-};
-
-auto printTriangle = [&] (int triangleID, int vertex1, int vertex2, int vertex3) {
-    std::cout << "Triangle: " << triangleID;
-    std::cout << "\t{ "  << vertex1;
-    std::cout << "\t" << vertex2;
-    std::cout << "\t" << vertex3;
-    std::cout << "}" << std::endl;
-};
-
-auto circleIndices = [&] (int nSlices, int centerIdx, int triangleIdxOffset) {
-	for (int i = 0; i < nSlices; i++) {
-        M2_indices[(i+triangleIdxOffset)*3 + 0] = centerIdx;
-        M2_indices[(i+triangleIdxOffset)*3 + 1] = (i+1) + centerIdx;
-        M2_indices[(i+triangleIdxOffset)*3 + 2] = (i+1) % nSlices + 1 + centerIdx;
-
-        printTriangle(i+triangleIdxOffset, 
-                    M2_indices[(i+triangleIdxOffset)*3 + 0], 
-                    M2_indices[(i+triangleIdxOffset)*3 + 1], 
-                    M2_indices[(i+triangleIdxOffset)*3 + 2]);
-
-    }
-};
-
-// Vertices definitions
-int triangleIdxOffset = 0;
-int centerIdx = 0;
-circleVertices(cX, cY, cZ, height, radius, nSlices, centerIdx);
-circleIndices(nSlices, centerIdx, triangleIdxOffset);
-
-triangleIdxOffset += nSlices;   // how many triangles assigned so far
-centerIdx = nSlices+1;          // consider the center point too
-std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
-circleVertices(cX, cY, cZ, -height, radius, nSlices, centerIdx);
-circleIndices(nSlices, centerIdx, triangleIdxOffset);
-
-triangleIdxOffset += nSlices;
-std::cout << std::endl << "The new offset is: " << triangleIdxOffset << std::endl;
-for (int i = 0; i < nSlices; i++) { // WARNING: this may not cover an ODD number of slices
-
-    M2_indices[(triangleIdxOffset+i)*3 + 0] = i + 1; //skip the center
-    M2_indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) % nSlices + 1;
-    M2_indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) + (nSlices + 1);
-    printTriangle(i+triangleIdxOffset, 
-                    M2_indices[(i+triangleIdxOffset)*3 + 0], 
-                    M2_indices[(i+triangleIdxOffset)*3 + 1], 
-                    M2_indices[(i+triangleIdxOffset)*3 + 2]);
-
-    triangleIdxOffset +=1;
-
-    M2_indices[(triangleIdxOffset+i)*3 + 0] = (i + 1) % nSlices + 1;
-    M2_indices[(triangleIdxOffset+i)*3 + 1] = (i + 1) + (nSlices + 1);
-    M2_indices[(triangleIdxOffset+i)*3 + 2] = (i + 1) % nSlices + (nSlices + 1) + 1;
-    printTriangle(i+triangleIdxOffset, 
-                    M2_indices[(i+triangleIdxOffset)*3 + 0], 
-                    M2_indices[(i+triangleIdxOffset)*3 + 1], 
-                    M2_indices[(i+triangleIdxOffset)*3 + 2]);
-
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
+int resolution;
+resolution = 16;
+makeCylinder(resolution);
 
 
 //// M3 : Sphere
-// Replace the code below, that creates a simple triangle, with the one to create a sphere.
-
-// Resizes the vertices array. Repalce the values with the correct number of
-// vertices components (3 * number of vertices)
-M3_vertices.resize(9);
-
-// Vertices definitions
-M3_vertices[0]  =  0.0;
-M3_vertices[1]  =  1.0;
-M3_vertices[2]  = -1.2;
-M3_vertices[3]  = -0.866;
-M3_vertices[4]  = -0.5;
-M3_vertices[5]  = -1.2;
-M3_vertices[6]  =  0.866;
-M3_vertices[7]  = -0.5;
-M3_vertices[8]  = -1.2;
-
-
-// Resizes the indices array. Repalce the values with the correct number of
-// indices (3 * number of triangles)
-M3_indices.resize(3);
-
-// indices definitions
-M3_indices[0] = 0;
-M3_indices[1] = 1;
-M3_indices[2] = 2;
-
-
-
-
-
-
+resolution = 4;
+makeSphere(resolution, resolution);
 
 
 
