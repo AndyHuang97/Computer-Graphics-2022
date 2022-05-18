@@ -1,0 +1,26 @@
+# Swap chain
+- Add swap chain extension support check 
+  - Add `deviceExtensions` global variable
+  - Update `isDeviceSuitable()`
+  - Add `checkDeviceExtensionSupport()`
+- Enable device extensions
+  - Update `createLogicalDevice()`
+    -  `createInfo.enabledExtensionCount`
+    -  `createInfo.ppEnabledExtensionNames`
+- Check swap chain support details (other than instance and device creation)
+  - Add `querySwapChainSupport()` (depends on physical device and surface)
+    - Enumerate capabilities, formats, presentation modes
+  - Update `isDeviceSuitable()`
+- Choosing the most suitable swap chain features
+  - Surface format `chooseSwapSurfaceFormat()`
+  - Presentation mode `chooseSwapPresentMode()`
+  - Swap extent `chooseSwapExtent()`
+- Create swap chain `createSwapChain()`
+  - Add `swapChain` member
+- Retrieve swap chain images
+  - Update `createSwapChain()`
+# Build Image Views
+  - Add `createImageViews()`
+  - Add `swapChainImageViews` member
+  - Add cleanup code because of expliciti instation of image views
+  - Still need framebuffer for rendering though
