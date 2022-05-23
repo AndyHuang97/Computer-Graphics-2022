@@ -236,7 +236,6 @@ void addCylinderSidePos(std::vector<Vertex> &vertices, const int nSlices,  const
 void addCylinderSideNorm(std::vector<Vertex> &vertices, const int nSlices,  const float r, const int circleStartIdx, const glm::mat4 rotMat) {
 	for (int i = 0; i < nSlices; i++) {
 		float alpha = (float) (i % nSlices) / nSlices * 2.0 * M_PI;
-		float beta = (float) ((i+1) % nSlices) / nSlices * 2.0 * M_PI;
 		
 		glm::vec4 r_dir = glm::vec4(r * cos(alpha), 0, r * sin(alpha), 0.0);
 		r_dir = rotMat * r_dir;
