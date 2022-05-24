@@ -172,20 +172,19 @@ void addCircleVerticesPos(std::vector<Vertex> &vertices, const float x,  const f
     }
 };
 
-void addCircleVerticesNorm(std::vector<Vertex> &vertices, const float r, const int nSlices, const int centerIdx, bool centerExists, bool isTop, const glm::mat4 rotMat) {
+void addCircleVerticesNorm(std::vector<Vertex> &vertices, const float r, const int nSlices, const int centerIdx, bool isTop, const glm::mat4 rotMat) {
 	float default_alpha = 0;
 	glm::vec3 dalpha = glm::vec3(-r * sin(default_alpha), 0, r * cos(default_alpha));
 	glm::vec3 r_dir = glm::vec3(  r * cos(default_alpha), 0, r * sin(default_alpha));
 	glm::vec3 norm = isTop 
-					? glm::normalize(glm::cross(dalpha, r_dir))
-					: glm::normalize(glm::cross(r_dir, dalpha));
+					? glm::cross(dalpha, r_dir)
+					: glm::cross(r_dir, dalpha);
+	norm = glm::normalize(rotMat * glm::vec4(norm, 0.0));
 	
 	// Center
 	int lastAvailableIdx = centerIdx;
-	if (centerExists)
-		lastAvailableIdx++;
     // Perimeter
-    for (int i = 0; i < nSlices; i++) {
+    for (int i = 0; i < nSlices+1; i++) {
 		vertices[lastAvailableIdx+i].norm = norm; // same norm for all vertices on the surface of a circle 
     }
 };
@@ -279,25 +278,23 @@ void makeCylinder(const float cX, const float cY, const float cZ, const float r,
     // Vertices definitions
     int assignedTriangles = 0;
 	int assignedVertices = 0;
-    int centerIdx = 0;
     int coneHeight = 0;
 
 	// top circle
 	bool centerExists = true;
 	bool isTop = true;
-    addCircleVerticesPos(M2_vertices, cX, cY+height, cZ, coneHeight, r, I, nSlices, centerIdx, centerExists);
-	addCircleVerticesNorm(M2_vertices, r, nSlices, centerIdx, centerExists, isTop,I);
-    addCircleIndices(M2_indices, nSlices, centerIdx, assignedTriangles);
+    addCircleVerticesPos(M2_vertices, cX, cY+height, cZ, coneHeight, r, I, nSlices, assignedVertices, centerExists);
+	addCircleVerticesNorm(M2_vertices, r, nSlices, assignedVertices, isTop,I);
+    addCircleIndices(M2_indices, nSlices, assignedVertices, assignedTriangles);
     assignedTriangles += nSlices;  
 	assignedVertices += nSlices+1;  // consider the first center point too
-    centerIdx = nSlices+1;
     std::cout << std::endl << "The new offset is: " << assignedTriangles << std::endl;
 
 	// bottom circle
 	isTop = false;
-    addCircleVerticesPos(M2_vertices, cX, cY-height, cZ, -coneHeight, r, I, nSlices, centerIdx, centerExists);
-	addCircleVerticesNorm(M2_vertices, r, nSlices, centerIdx, centerExists, isTop, I);
-    addCircleIndices(M2_indices, nSlices, centerIdx, assignedTriangles);
+    addCircleVerticesPos(M2_vertices, cX, cY-height, cZ, -coneHeight, r, I, nSlices, assignedVertices, centerExists);
+	addCircleVerticesNorm(M2_vertices, r, nSlices, assignedVertices, isTop, I);
+    addCircleIndices(M2_indices, nSlices, assignedVertices, assignedTriangles);
 	assignedTriangles += nSlices;
 	assignedVertices += nSlices+1;
     std::cout << std::endl << "The new offset is: " << assignedTriangles << std::endl;
